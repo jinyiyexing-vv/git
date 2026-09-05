@@ -1,0 +1,23 @@
+# dependencies
+node_modules/
+package-lock.json
+
+# runtime data
+data/
+*.sqlite
+*.sqlite-journal
+*.db
+
+# editor
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# logs
+*.log
+npm-debug.log*
+
+# env
+.env
+.env.local

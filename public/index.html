@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>校园活动管理系统 V1.0</title>
+<style>
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; margin: 0; background: #f5f7fa; color: #2c3e50; }
+  header { background: #2c3e50; color: #fff; padding: 20px 32px; }
+  header h1 { margin: 0; font-size: 20px; }
+  main { max-width: 920px; margin: 24px auto; padding: 0 24px; }
+  .card { background: #fff; border-radius: 6px; padding: 24px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .nav a { color: #2c3e50; text-decoration: none; margin-right: 16px; padding: 6px 10px; border: 1px solid #dcdfe6; border-radius: 4px; background: #fff; }
+  .nav a:hover { background: #ecf5ff; border-color: #409eff; }
+  .meta { color: #909399; font-size: 13px; }
+  code { background: #f0f2f5; padding: 1px 5px; border-radius: 3px; font-family: Menlo, monospace; }
+</style>
+</head>
+<body>
+<header><h1>校园活动管理系统 · V1.0</h1></header>
+<main>
+  <div class="card">
+    <h2>欢迎</h2>
+    <p>这是 V1.0 的最小可用版本入口。请从下方选择你要进入的功能模块：</p>
+    <div class="nav">
+      <a href="/login.html">登录</a>
+      <a href="/register.html">注册</a>
+      <a href="/activities.html">浏览活动</a>
+      <a href="/teacher-dashboard.html">教师端</a>
+      <a href="/admin.html">管理员端</a>
+    </div>
+    <p class="meta">测试账号：<code>stu01 / pass123</code> · <code>tch01 / pass123</code> · <code>admin / admin123</code></p>
+  </div>
+  <div class="card">
+    <h3>6 项核心需求（V1.0 范围）</h3>
+    <ol>
+      <li>REQ-01 学生注册/登录</li>
+      <li>REQ-02 活动列表/详情/分类筛选</li>
+      <li>REQ-03 学生报名（含去重与状态校验）</li>
+      <li>REQ-04 教师创建/编辑/关闭活动</li>
+      <li>REQ-05 教师查看报名名单</li>
+      <li>REQ-06 管理员账号禁用</li>
+    </ol>
+  </div>
+</main>
+</body>
+</html>

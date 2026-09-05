@@ -1,0 +1,21 @@
+{
+  "name": "campus-activity-system",
+  "version": "1.0.0",
+  "description": "校园活动管理系统 V1.0 —— 基于工程意图的软件迭代开发 实验一",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "init-db": "node db/init.js",
+    "seed": "node db/seed.js"
+  },
+  "keywords": ["campus", "activity", "registration", "express", "sqlite"],
+  "author": "基因重组 (邹恩源、汪文卓、杨涛)",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "bcryptjs": "^2.4.3"
+  },
+  "engines": {
+    "node": ">=23.4.0"
+  }
+}
