@@ -1,3 +1,140 @@
-<!-- placeholder for V1.0 commit 1 - to be wired up in subsequent commits -->
 <!DOCTYPE html>
-<html><body><h1>activity-detail (placeholder)</h1></body></html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>活动详情 · 校园活动管理系统</title>
+<style>
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; margin: 0; background: #f5f7fa; color: #2c3e50; }
+  header { background: #2c3e50; color: #fff; padding: 14px 24px; }
+  header h1 { margin: 0; font-size: 17px; }
+  header a { color: #cfd8e3; font-size: 13px; text-decoration: none; }
+  main { max-width: 760px; margin: 20px auto; padding: 0 16px; }
+  .card { background: #fff; border-radius: 6px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  h2 { margin: 0 0 14px; font-size: 22px; }
+  .meta { color: #909399; font-size: 13px; line-height: 2; }
+  .desc { margin-top: 16px; font-size: 14px; line-height: 1.8; color: #303133; white-space: pre-wrap; }
+  .actions { margin-top: 24px; }
+  .btn { padding: 10px 20px; border: 0; border-radius: 4px; cursor: pointer; font-size: 14px; margin-right: 10px; }
+  .btn-primary { background: #409eff; color: #fff; }
+  .btn-primary:hover { background: #66b1ff; }
+  .btn-primary:disabled { background: #a0cfff; cursor: not-allowed; }
+  .btn-default { background: #fff; color: #606266; border: 1px solid #dcdfe6; }
+  .tag { display: inline-block; padding: 2px 10px; border-radius: 3px; font-size: 12px; background: #ecf5ff; color: #409eff; margin-right: 6px; }
+  .tag.closed { background: #f4f4f5; color: #909399; }
+  .msg { margin-top: 12px; padding: 10px; border-radius: 4px; font-size: 13px; display: none; }
+  .msg.err { background: #fef0f0; color: #f56c6c; display: block; }
+  .msg.ok { background: #f0f9eb; color: #67c23a; display: block; }
+</style>
+</head>
+<body>
+<header><h1>活动详情</h1><a href="/activities.html">← 返回列表</a></header>
+<main>
+  <div class="card" id="card"><div class="meta">加载中…</div></div>
+</main>
+<script>
+const id = new URLSearchParams(location.search).get('id');
+const card = document.getElementById('card');
+let activity = null;
+let me = null;
+
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function load() {
+  const [rAct, rMe] = await Promise.all([
+    fetch('/api/activities/' + id, { credentials: 'include' }),
+    fetch('/api/auth/me', { credentials: 'include' }),
+  ]);
+  if (!rAct.ok) { card.innerHTML = '<div class="meta">活动不存在</div>'; return; }
+  activity = await rAct.json();
+  me = rMe.ok ? await rMe.json() : null;
+  render();
+}
+
+function render() {
+  const remaining = activity.capacity - activity.current_count;
+  const isOwner = me && me.id === activity.organizer_id;
+  const isAdmin = me && me.role === 'admin';
+  const isStudent = me && me.role === 'student';
+  const isTeacher = me && me.role === 'teacher';
+  const registered = !!activity.myRegistration;
+  const canRegister = isStudent && activity.status === 'open' && remaining > 0 && !registered;
+
+  card.innerHTML = `
+    <div>
+      <span class="tag">${escapeHtml(activity.category || '未分类')}</span>
+      <span class="tag ${activity.status === 'closed' ? 'closed' : ''}">${activity.status === 'closed' ? '已关闭' : '报名中'}</span>
+    </div>
+    <h2 style="margin-top:10px;">${escapeHtml(activity.title)}</h2>
+    <div class="meta">
+      时间：${escapeHtml(activity.start_time)} ~ ${escapeHtml(activity.end_time)}<br>
+      地点：${escapeHtml(activity.location)}<br>
+      组织方：${escapeHtml(activity.organizer || '')}<br>
+      名额：${activity.current_count} / ${activity.capacity}（剩余 ${remaining}）
+    </div>
+    <div class="desc">${escapeHtml(activity.description)}</div>
+    <div class="actions" id="actions"></div>
+    <div id="msg" class="msg"></div>
+  `;
+
+  const actions = document.getElementById('actions');
+  const msg = document.getElementById('msg');
+
+  if (!me) {
+    actions.innerHTML = '<a class="btn btn-primary" href="/login.html">登录后报名</a>';
+  } else if (registered) {
+    actions.innerHTML = `<span class="btn btn-default" style="cursor:default;">已报名（${escapeHtml(activity.myRegistration.registered_at)}）</span>`;
+  } else if (activity.status === 'closed') {
+    actions.innerHTML = '<span class="btn btn-default" style="cursor:default;">活动已关闭</span>';
+  } else if (remaining <= 0) {
+    actions.innerHTML = '<span class="btn btn-default" style="cursor:default;">名额已满</span>';
+  } else if (isStudent) {
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-primary';
+    btn.textContent = '立即报名';
+    btn.onclick = async () => {
+      btn.disabled = true;
+      const r = await fetch(`/api/activities/${id}/registrations`, { method: 'POST', credentials: 'include' });
+      const data = await r.json();
+      msg.className = r.ok ? 'msg ok' : 'msg err';
+      msg.textContent = r.ok ? '报名成功' : (data.message || data.error || '报名失败');
+      if (r.ok) setTimeout(load, 600); else btn.disabled = false;
+    };
+    actions.appendChild(btn);
+  }
+
+  if (isOwner || isAdmin) {
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn btn-default';
+    editBtn.textContent = '编辑';
+    editBtn.onclick = () => location.href = `/teacher-dashboard.html?edit=${id}`;
+    actions.appendChild(editBtn);
+
+    if (activity.status === 'open') {
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'btn btn-default';
+      closeBtn.textContent = '关闭活动';
+      closeBtn.onclick = async () => {
+        if (!confirm('关闭后学生将无法继续报名，确认？')) return;
+        const r = await fetch(`/api/activities/${id}/close`, { method: 'POST', credentials: 'include' });
+        const data = await r.json();
+        msg.className = r.ok ? 'msg ok' : 'msg err';
+        msg.textContent = r.ok ? '已关闭' : (data.message || '操作失败');
+        if (r.ok) setTimeout(load, 600);
+      };
+      actions.appendChild(closeBtn);
+    }
+
+    const rosterBtn = document.createElement('a');
+    rosterBtn.className = 'btn btn-default';
+    rosterBtn.textContent = '查看报名名单';
+    rosterBtn.href = `/teacher-dashboard.html?roster=${id}`;
+    actions.appendChild(rosterBtn);
+  }
+}
+
+load();
+</script>
+</body>
+</html>
