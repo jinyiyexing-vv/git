@@ -17,6 +17,9 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json({ limit: '64kb' }));
 app.use(express.urlencoded({ extended: false }));
 
+// 全局会话解析：把 Cookie 里的 token 解析成 req.user
+app.use(authMiddleware.resolveUser);
+
 // 静态资源
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -28,7 +31,7 @@ app.get('/api/health', (req, res) => {
 // 业务路由
 app.use('/api/auth', authRoutes);
 app.use('/api/activities', activityRoutes);
-app.use('/api/activities', registrationRoutes);   // 注册接口挂在活动下
+app.use('/api/activities', registrationRoutes);   // 报名接口挂在活动下
 app.use('/api/admin', authMiddleware.requireRole('admin'), adminRoutes);
 
 // 错误处理

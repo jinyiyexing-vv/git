@@ -1,3 +1,65 @@
-<!-- placeholder for V1.0 commit 1 - to be wired up in subsequent commits -->
 <!DOCTYPE html>
-<html><body><h1>login (placeholder)</h1></body></html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>登录 · 校园活动管理系统</title>
+<style>
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f5f7fa; margin: 0; }
+  .wrap { max-width: 380px; margin: 60px auto; background: #fff; padding: 32px; border-radius: 8px; box-shadow: 0 1px 6px rgba(0,0,0,0.08); }
+  h1 { margin: 0 0 24px; font-size: 20px; text-align: center; }
+  label { display: block; margin: 12px 0 6px; font-size: 13px; color: #606266; }
+  input { width: 100%; padding: 10px; border: 1px solid #dcdfe6; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
+  button { width: 100%; margin-top: 20px; padding: 11px; background: #409eff; color: #fff; border: 0; border-radius: 4px; font-size: 14px; cursor: pointer; }
+  button:hover { background: #66b1ff; }
+  .msg { margin-top: 14px; padding: 10px; border-radius: 4px; font-size: 13px; display: none; }
+  .msg.err { background: #fef0f0; color: #f56c6c; display: block; }
+  .msg.ok { background: #f0f9eb; color: #67c23a; display: block; }
+  .links { margin-top: 16px; text-align: center; font-size: 13px; }
+  .links a { color: #409eff; text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>登录</h1>
+  <form id="form">
+    <label>账号</label>
+    <input id="username" name="username" required autocomplete="username">
+    <label>密码</label>
+    <input id="password" name="password" type="password" required autocomplete="current-password">
+    <button type="submit">登录</button>
+  </form>
+  <div id="msg" class="msg"></div>
+  <div class="links">还没有账号？<a href="/register.html">注册</a> · <a href="/index.html">返回首页</a></div>
+</div>
+<script>
+const form = document.getElementById('form');
+const msg = document.getElementById('msg');
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  msg.className = 'msg';
+  const body = { username: form.username.value.trim(), password: form.password.value };
+  try {
+    const r = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(body),
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      msg.className = 'msg err';
+      msg.textContent = data.message || data.error || '登录失败';
+      return;
+    }
+    msg.className = 'msg ok';
+    msg.textContent = '登录成功，跳转中…';
+    const target = data.role === 'teacher' ? '/teacher-dashboard.html' : data.role === 'admin' ? '/admin.html' : '/activities.html';
+    setTimeout(() => location.href = target, 500);
+  } catch (err) {
+    msg.className = 'msg err';
+    msg.textContent = '网络错误：' + err.message;
+  }
+});
+</script>
+</body>
+</html>
