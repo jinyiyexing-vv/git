@@ -1,3 +1,77 @@
-<!-- placeholder for V1.0 commit 1 - to be wired up in subsequent commits -->
 <!DOCTYPE html>
-<html><body><h1>my-registrations (placeholder)</h1></body></html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>我的报名 · 校园活动管理系统</title>
+<style>
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; margin: 0; background: #f5f7fa; color: #2c3e50; }
+  header { background: #2c3e50; color: #fff; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; }
+  header h1 { margin: 0; font-size: 17px; }
+  header a { color: #cfd8e3; font-size: 13px; text-decoration: none; margin-left: 12px; }
+  main { max-width: 860px; margin: 20px auto; padding: 0 16px; }
+  .card { background: #fff; border-radius: 6px; padding: 18px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  .card h3 { margin: 0 0 8px; font-size: 15px; }
+  .card h3 a { color: #2c3e50; text-decoration: none; }
+  .card h3 a:hover { color: #409eff; }
+  .meta { color: #909399; font-size: 12px; line-height: 1.8; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 12px; background: #ecf5ff; color: #409eff; margin-right: 6px; }
+  .tag.closed { background: #f4f4f5; color: #909399; }
+  .empty { text-align: center; padding: 40px 0; color: #909399; }
+  .btn { padding: 6px 12px; border: 0; border-radius: 4px; cursor: pointer; font-size: 12px; background: #fff; color: #606266; border: 1px solid #dcdfe6; }
+  .btn.danger { background: #fef0f0; color: #f56c6c; border-color: #fbc4c4; }
+</style>
+</head>
+<body>
+<header>
+  <h1>我的报名</h1>
+  <nav>
+    <a href="/activities.html">活动列表</a>
+    <a href="/index.html">首页</a>
+    <a href="javascript:logout()">退出</a>
+  </nav>
+</header>
+<main><div id="list"></div></main>
+<script>
+const listEl = document.getElementById('list');
+function escapeHtml(s) { return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmt(v) { return String(v || '').replace('T', ' ').slice(0, 16); }
+
+async function load() {
+  const r = await fetch('/api/activities/registrations/mine', { credentials: 'include' });
+  if (r.status === 401) { location.href = '/login.html'; return; }
+  const data = await r.json();
+  if (!data.items || data.items.length === 0) {
+    listEl.innerHTML = '<div class="card empty">还没有报名任何活动，<a href="/activities.html">去看看</a></div>';
+    return;
+  }
+  listEl.innerHTML = data.items.map(a => `
+    <div class="card">
+      <h3><a href="/activity-detail.html?id=${a.id}">${escapeHtml(a.title)}</a></h3>
+      <div class="meta">
+        <span class="tag">${escapeHtml(a.category || '未分类')}</span>
+        <span class="tag ${a.status === 'closed' ? 'closed' : ''}">${a.status === 'closed' ? '已关闭' : '报名中'}</span>
+        ${fmt(a.start_time)} ~ ${fmt(a.end_time)} · ${escapeHtml(a.location)}
+      </div>
+      <div class="meta">组织方：${escapeHtml(a.organizer || '')} · 报名时间：${fmt(a.registered_at)}</div>
+      <div style="margin-top:10px;">
+        <button class="btn danger" onclick="cancelReg(${a.id})">取消报名</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function cancelReg(id) {
+  if (!confirm('确认取消报名？')) return;
+  const r = await fetch(`/api/activities/${id}/registrations/me`, { method: 'DELETE', credentials: 'include' });
+  if (r.ok) load(); else alert('取消失败');
+}
+
+async function logout() {
+  await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+  location.href = '/login.html';
+}
+
+load();
+</script>
+</body>
+</html>

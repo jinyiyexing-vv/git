@@ -1,3 +1,118 @@
-<!-- placeholder for V1.0 commit 1 - to be wired up in subsequent commits -->
 <!DOCTYPE html>
-<html><body><h1>admin (placeholder)</h1></body></html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>管理员后台 · 校园活动管理系统</title>
+<style>
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; margin: 0; background: #f5f7fa; color: #2c3e50; }
+  header { background: #2c3e50; color: #fff; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; }
+  header h1 { margin: 0; font-size: 17px; }
+  header a { color: #cfd8e3; font-size: 13px; text-decoration: none; margin-left: 12px; }
+  main { max-width: 960px; margin: 20px auto; padding: 0 16px; }
+  .card { background: #fff; border-radius: 6px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  h2 { margin: 0 0 14px; font-size: 16px; }
+  .filter { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+  .filter select, .filter input { padding: 7px 10px; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 13px; }
+  .filter button { padding: 7px 14px; background: #409eff; color: #fff; border: 0; border-radius: 4px; cursor: pointer; font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid #ebeef5; }
+  th { background: #fafafa; color: #909399; font-weight: 500; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 12px; }
+  .tag.student { background: #ecf5ff; color: #409eff; }
+  .tag.teacher { background: #f0f9eb; color: #67c23a; }
+  .tag.admin { background: #fdf6ec; color: #e6a23c; }
+  .tag.disabled { background: #fef0f0; color: #f56c6c; }
+  .btn { padding: 5px 10px; border: 0; border-radius: 4px; cursor: pointer; font-size: 12px; }
+  .btn.danger { background: #fef0f0; color: #f56c6c; border: 1px solid #fbc4c4; }
+  .btn.ok { background: #f0f9eb; color: #67c23a; border: 1px solid #c2e7b0; }
+  .msg { margin-top: 10px; padding: 8px; border-radius: 4px; font-size: 13px; display: none; }
+  .msg.err { background: #fef0f0; color: #f56c6c; display: block; }
+  .msg.ok { background: #f0f9eb; color: #67c23a; display: block; }
+</style>
+</head>
+<body>
+<header>
+  <h1>管理员后台 · 账号管理</h1>
+  <nav>
+    <a href="/activities.html">活动列表</a>
+    <a href="/index.html">首页</a>
+    <a href="javascript:logout()">退出</a>
+  </nav>
+</header>
+<main>
+  <div class="card">
+    <h2>用户列表</h2>
+    <div class="filter">
+      <select id="f-role">
+        <option value="">全部角色</option>
+        <option value="student">学生</option>
+        <option value="teacher">教师</option>
+        <option value="admin">管理员</option>
+      </select>
+      <input id="f-q" placeholder="搜索账号">
+      <button onclick="load()">查询</button>
+    </div>
+    <table>
+      <thead><tr><th>ID</th><th>账号</th><th>角色</th><th>状态</th><th>注册时间</th><th>操作</th></tr></thead>
+      <tbody id="list"></tbody>
+    </table>
+    <div id="msg" class="msg"></div>
+  </div>
+</main>
+<script>
+const listEl = document.getElementById('list');
+const msg = document.getElementById('msg');
+function escapeHtml(s) { return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+async function load() {
+  const role = document.getElementById('f-role').value;
+  const q = document.getElementById('f-q').value;
+  const params = new URLSearchParams();
+  if (role) params.append('role', role);
+  if (q) params.append('q', q);
+  const r = await fetch('/api/admin/users?' + params.toString(), { credentials: 'include' });
+  if (r.status === 401 || r.status === 403) { listEl.innerHTML = '<tr><td colspan="6">请以管理员身份登录</td></tr>'; return; }
+  const data = await r.json();
+  listEl.innerHTML = data.items.map(u => `
+    <tr>
+      <td>${u.id}</td>
+      <td>${escapeHtml(u.username)}</td>
+      <td><span class="tag ${u.role}">${u.role}</span></td>
+      <td>${u.disabled ? '<span class="tag disabled">已禁用</span>' : '<span class="tag teacher">正常</span>'}</td>
+      <td>${escapeHtml(u.created_at)}</td>
+      <td>
+        ${u.role === 'admin' ? '<span style="color:#909399;font-size:12px;">不可操作</span>'
+          : (u.disabled
+            ? `<button class="btn ok" onclick="enableU(${u.id})">启用</button>`
+            : `<button class="btn danger" onclick="disableU(${u.id})">禁用</button>`)}
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function disableU(id) {
+  if (!confirm('禁用后该用户所有 session 将被吊销，确认？')) return;
+  const r = await fetch(`/api/admin/users/${id}/disable`, { method: 'POST', credentials: 'include' });
+  const data = await r.json();
+  msg.className = r.ok ? 'msg ok' : 'msg err';
+  msg.textContent = r.ok ? '已禁用' : (data.message || '操作失败');
+  load();
+}
+
+async function enableU(id) {
+  const r = await fetch(`/api/admin/users/${id}/enable`, { method: 'POST', credentials: 'include' });
+  const data = await r.json();
+  msg.className = r.ok ? 'msg ok' : 'msg err';
+  msg.textContent = r.ok ? '已启用' : (data.message || '操作失败');
+  load();
+}
+
+async function logout() {
+  await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+  location.href = '/login.html';
+}
+
+load();
+</script>
+</body>
+</html>
