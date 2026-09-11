@@ -8,15 +8,17 @@
 
 ## 技术栈
 
-- **前端**：HTML + 原生 JavaScript（无框架）
+- **前端**：HTML + 原生 JavaScript（无框架、无构建工具，JS 内联于各页面）
 - **后端**：Node.js + Express
-- **数据库**：SQLite（`better-sqlite3`）
-- **密码加密**：`bcryptjs`
-- **会话**：自实现的 Token 会话（Cookie 携带）
+- **数据库**：SQLite（Node.js 内置 `node:sqlite` 模块，**需要 Node.js ≥ 23.4**）
+- **密码加密**：`bcryptjs`（bcrypt 算法，10 轮加盐）
+- **会话**：自实现的 Token 会话（32 字节随机 token，Cookie `session_token` 携带，7 天有效）
 
 ## 快速开始
 
 ```bash
+# 环境要求：Node.js >= 23.4（内置 node:sqlite）
+
 # 安装依赖
 npm install
 
@@ -60,7 +62,7 @@ npm start
 │   │   ├── registrations.js
 │   │   └── admin.js
 │   └── util.js
-└── public/                # 前端静态资源
+└── public/                # 前端静态资源（8 个页面，JS 内联）
     ├── index.html
     ├── login.html
     ├── register.html
@@ -80,7 +82,7 @@ npm start
 | REQ-03 | 学生报名（含去重、状态校验） | `POST /api/activities/:id/registrations` |
 | REQ-04 | 教师创建/编辑/关闭活动 | `POST /api/activities` `PUT /api/activities/:id` `POST /api/activities/:id/close` |
 | REQ-05 | 教师查看报名名单 | `GET /api/activities/:id/registrations` |
-| REQ-06 | 管理员账号禁用 | `POST /api/admin/users/:id/disable` |
+| REQ-06 | 管理员查询用户 / 禁用 / 启用 | `GET /api/admin/users` `POST /api/admin/users/:id/disable` `POST /api/admin/users/:id/enable` |
 
 ## 提交历史
 
@@ -88,11 +90,11 @@ npm start
 
 | Commit | 标题 | 对应需求 |
 |---|---|---|
-| a1b2c3d | init: 项目骨架与依赖声明 | REQ-01~06 |
-| b2c3d4e | feat(db): 建表与种子数据 | REQ-01, REQ-02, REQ-04 |
-| c3d4e5f | feat(auth): 登录、注册、会话中间件 | REQ-01 |
-| d4e5f6a | feat(activities): 活动列表/详情/分类筛选 | REQ-02 |
-| e5f6a7b | feat(registration): 报名/防重/状态校验 | REQ-03, REQ-05, REQ-06 |
+| 7b98be6 | init: 项目骨架与依赖声明 | REQ-01~06 |
+| cf95b62 | feat(db): 建表与种子数据 | REQ-01, REQ-02, REQ-04 |
+| b66ba1a | feat(auth): 登录、注册、会话中间件 | REQ-01 |
+| 21de09f | feat(activities): 活动列表/详情/分类筛选 + 教师端 CRUD | REQ-02, REQ-04 |
+| 925711e | feat(registration): 报名/防重/状态校验 + 管理员禁用 | REQ-03, REQ-05, REQ-06 |
 
 ## License
 
